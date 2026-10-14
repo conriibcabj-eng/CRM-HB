@@ -85,6 +85,8 @@ label.l{display:block;font-size:12.5px;color:var(--mut);margin-bottom:3px}
 .money div{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px 10px}
 .money b{display:block;font-size:17px}
 .warnbox{background:hsl(40 90% 50% / .15);border:1px solid hsl(40 90% 50% / .5);border-radius:10px;padding:8px 12px;margin-top:20px;font-size:13.5px}
+.login{max-width:360px;margin:12vh auto;padding:0 16px}.login form{display:grid;gap:10px}.msg{font-size:13.5px;margin-top:10px;color:var(--mut)}.msg.err{color:var(--bad)}
+.sync{font-size:12px;color:var(--mut)}
 </style>
 </head>
 <body>
@@ -92,6 +94,7 @@ label.l{display:block;font-size:12.5px;color:var(--mut);margin-bottom:3px}
 <main id="main"></main>
 <div id="modal"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js"></script>
 <script>
 'use strict';
 const ETAPAS = ['Contacto','Demo','Propuesta','Negociación','Desarrollo','Entregado','Soporte','Descartado'];
@@ -110,11 +113,90 @@ const ui = { tab:'hoy', vista:'lista', filtro:'Todos', q:'', etapa:'', modal:nul
 function load(){
   try{
     const d = JSON.parse(localStorage.getItem(KEY));
-    if(d && Array.isArray(d.clientes)){ d.config = Object.assign({diasSinContacto:7, yo:'Conrado', ultimoBackup:null}, d.config); return d; }
+    if(d && Array.isArray(d.clientes)){ d.config = Object.assign({diasSinContacto:7, yo:'Conrado', ultimoBackup:null}, d.config); d.sync = d.sync || {}; return d; }
   }catch(e){}
-  return { clientes:[], config:{ diasSinContacto:7, yo:'Conrado', ultimoBackup:null } };
+  return { clientes:[], sync:{}, config:{ diasSinContacto:7, yo:'Conrado', ultimoBackup:null } };
 }
-function save(){ try{ localStorage.setItem(KEY, JSON.stringify(db)); }catch(e){ alert('No pude guardar en el navegador. Hacé un backup ya.'); } }
+function persist(){ try{ localStorage.setItem(KEY, JSON.stringify(db)); }catch(e){ alert('No pude guardar en el navegador. Hacé un backup ya.'); } }
+function save(){ persist(); schedulePush(); }
+
+// ---------- sincronización con Supabase ----------
+const SB_URL = 'https://ucbhwvjvuoywdecixheh.supabase.co';
+const SB_KEY = 'sb_publishable_e8DjirWO31iJ6N0UQ1N0Vg_vr-zlgNR';
+let sb = null, user = null, estado = '', pushT;
+try{ sb = window.supabase.createClient(SB_URL, SB_KEY); }catch(e){ sb = null; }
+function setEstado(t){ estado = t; const el = document.getElementById('sync'); if(el) el.textContent = t; }
+function schedulePush(){ if(!sb || !user) return; setEstado('guardando…'); clearTimeout(pushT); pushT = setTimeout(push, 400); }
+async function push(){
+  try{
+    const subir = db.clientes.filter(c => db.sync[c.id] !== c.updatedAt);
+    if(subir.length){
+      const { error } = await sb.from('clientes').upsert(subir.map(c => ({id:c.id, data:c, updated_at:c.updatedAt})));
+      if(error) throw error;
+      subir.forEach(c => db.sync[c.id] = c.updatedAt);
+    }
+    const borrar = Object.keys(db.sync).filter(id => !byId(id));
+    if(borrar.length){
+      const { error } = await sb.from('clientes').delete().in('id', borrar);
+      if(error) throw error;
+      borrar.forEach(id => delete db.sync[id]);
+    }
+    persist(); setEstado('☁ sincronizado');
+  }catch(e){ setEstado('⚠ sin conexión, se reintenta al volver'); }
+}
+async function pull(){
+  try{
+    const { data, error } = await sb.from('clientes').select('id,data,updated_at');
+    if(error) throw error;
+    const remoto = new Set(data.map(r => r.id));
+    for(const r of data){
+      const i = db.clientes.findIndex(c => c.id === r.id);
+      if(i < 0){ db.clientes.push(r.data); db.sync[r.id] = r.data.updatedAt; }
+      else if((r.data.updatedAt||0) > (db.clientes[i].updatedAt||0)){ db.clientes[i] = r.data; db.sync[r.id] = r.data.updatedAt; }
+    }
+    // borrado en otro dispositivo: estaba sincronizado y ya no está en el servidor
+    db.clientes = db.clientes.filter(c => remoto.has(c.id) || !(c.id in db.sync));
+    for(const id of Object.keys(db.sync)) if(!remoto.has(id)) delete db.sync[id];
+    persist(); render(); await push();
+  }catch(e){ setEstado('⚠ sin conexión'); }
+}
+function suscribir(){
+  sb.channel('crm').on('postgres_changes', {event:'*', schema:'public', table:'clientes'}, p => {
+    if(p.eventType === 'DELETE'){
+      const id = p.old.id; db.clientes = db.clientes.filter(c => c.id !== id); delete db.sync[id];
+      if(ui.modal && ui.modal.id === id) ui.modal = null;
+    }else{
+      const r = p.new, i = db.clientes.findIndex(c => c.id === r.id);
+      if(i >= 0 && !((r.data.updatedAt||0) > (db.clientes[i].updatedAt||0))) return;
+      if(i >= 0) db.clientes[i] = r.data; else db.clientes.push(r.data);
+      db.sync[r.id] = r.data.updatedAt;
+    }
+    persist();
+    const a = document.activeElement;
+    if(!(a && /INPUT|TEXTAREA|SELECT/.test(a.tagName))) render();
+  }).subscribe();
+}
+async function iniciar(){
+  if(!sb){ render(); return; }
+  const { data } = await sb.auth.getSession();
+  user = data.session ? data.session.user : null;
+  render();
+  if(user){ await pull(); suscribir(); }
+  sb.auth.onAuthStateChange((ev, ses) => {
+    const nuevo = ses ? ses.user : null;
+    if(nuevo && !user){ user = nuevo; render(); pull().then(suscribir); }
+    if(!nuevo && user){ user = null; render(); }
+  });
+  window.addEventListener('online', () => user && pull());
+}
+function loginHTML(msg, err){
+  return `<div class="login"><h1 style="margin:0 0 4px">CRM HB</h1><div class="sub" style="margin-bottom:16px">Entrá con tu mail y contraseña.</div>
+    <form data-submit="login"><input type="email" name="email" placeholder="Email" required autocomplete="email">
+    <input type="password" name="password" placeholder="Contraseña (mín. 6)" minlength="6" required autocomplete="current-password">
+    <button class="btn pri" style="justify-content:center">Entrar</button>
+    <button type="button" class="btn" data-a="signup" style="justify-content:center">Crear cuenta (primera vez)</button></form>
+    <div class="msg ${err?'err':''}" id="msg">${esc(msg||'')}</div></div>`;
+}
 const byId = id => db.clientes.find(c => c.id === id);
 function touch(c){ c.updatedAt = Date.now(); save(); render(); }
 
@@ -178,6 +260,7 @@ const urgentes = g => g.responder.length + g.vencidos.length + g.hoy.length;
 
 // ---------- render ----------
 function render(){
+  if(sb && !user){ if(!document.querySelector('.login')){ document.getElementById('topbar').innerHTML=''; document.getElementById('modal').innerHTML=''; document.getElementById('main').innerHTML = loginHTML(); } return; }
   const ov = document.querySelector('.overlay'), sc = ov ? ov.scrollTop : null;
   const g = agenda();
   const n = urgentes(g);
@@ -189,6 +272,7 @@ function render(){
       <button class="tab ${ui.tab==='clientes'?'on':''}" data-a="tab" data-v="clientes">Clientes</button>
     </div>
     <span class="sp"></span>
+    <span class="sync" id="sync">${esc(estado)}</span>
     <div class="chips">${['Todos',...SOCIOS].map(s=>`<button class="chip-b ${ui.filtro===s?'on':''}" data-a="filtro" data-v="${s}">${s}</button>`).join('')}</div>
     <button class="btn pri" data-a="nuevo">+ Cliente</button>
     <button class="btn" data-a="config" title="Configuración y backup">⚙</button>`;
@@ -326,6 +410,7 @@ function modalHTML(){
       <div class="row" style="margin-top:16px"><button class="btn pri">Guardar</button></div>
     </form>`);
   if(m.type==='config') return modalShell('Configuración', `
+    ${user?`<h4>Sesión</h4><div class="row"><span class="sub" style="flex:1">${esc(user.email)}</span><button class="btn" data-a="salir">Salir</button></div>`:''}
     <h4>Quién sos</h4>
     <select data-cfg="yo">${opts(SOCIOS, db.config.yo)}</select>
     <div class="sub">Se usa como autor de las notas y como responsable por defecto.</div>
@@ -409,6 +494,13 @@ const A = {
   tab(t){ ui.tab = t.dataset.v; render(); },
   filtro(t){ ui.filtro = t.dataset.v; render(); },
   vista(t){ ui.vista = t.dataset.v; render(); },
+  async signup(t){
+    const f = t.closest('form'), m = document.getElementById('msg');
+    if(!f.reportValidity()) return;
+    const { error } = await sb.auth.signUp({email:f.email.value.trim(), password:f.password.value});
+    m.className = 'msg ' + (error?'err':''); m.textContent = error ? error.message : 'Listo. Te mandamos un mail: tocá el link para confirmar y después entrá acá. (Si el link abre una página que no carga, no importa: ya quedó confirmado.)';
+  },
+  async salir(){ await sb.auth.signOut(); ui.modal = null; },
   nuevo(){ ui.modal = {type:'nuevo'}; render(); },
   config(){ ui.modal = {type:'config'}; render(); },
   abrir(t){ ui.modal = {type:'cliente', id:t.dataset.id}; render(); },
@@ -451,6 +543,11 @@ const A = {
   }
 };
 const S = {
+  async login(f){
+    const m = document.getElementById('msg'); m.className = 'msg'; m.textContent = 'Entrando…';
+    const { error } = await sb.auth.signInWithPassword({email:f.email.value.trim(), password:f.password.value});
+    if(error){ m.className = 'msg err'; m.textContent = /confirm/i.test(error.message) ? 'Falta confirmar el mail: revisá tu casilla.' : 'Mail o contraseña incorrectos.'; }
+  },
   crear(f){
     const d = Object.fromEntries(new FormData(f));
     const c = nuevoCliente({nombre:d.nombre.trim(), duenio:d.duenio.trim(), rubro:d.rubro, whatsapp:d.whatsapp.trim(),
@@ -498,10 +595,10 @@ document.addEventListener('submit', e => {
 });
 document.addEventListener('keydown', e => { if(e.key==='Escape' && ui.modal) A.cerrar(); });
 // al volver a la pestaña, refrescar (cambia el día, otros tabs, etc.)
-document.addEventListener('visibilitychange', () => { if(!document.hidden && !ui.modal){ db = load(); render(); } });
+document.addEventListener('visibilitychange', () => { if(!document.hidden){ if(user) pull(); else if(!sb && !ui.modal){ db = load(); render(); } } });
 window.addEventListener('storage', e => { if(e.key===KEY && !ui.modal){ db = load(); render(); } });
 
-render();
+iniciar();
 </script>
 </body>
 </html>
