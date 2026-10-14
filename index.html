@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRM HB</title>
+<style>
+:root{
+  --bg:#f5f6f8;--card:#fff;--tx:#1d2330;--mut:#6b7385;--bd:#e3e6ec;--ac:#2f6df6;--ac-tx:#fff;
+  --ok:#1f9d55;--warn:#d98a00;--bad:#d64545;--soft:#eef1f6;--sh:0 1px 3px rgba(20,30,50,.08);
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#12151b;--card:#1b2029;--tx:#e8ebf2;--mut:#98a1b5;--bd:#2b3240;--ac:#5b8cff;--ac-tx:#0b1020;
+  --ok:#3ecf7d;--warn:#f0b03a;--bad:#ff6b6b;--soft:#242b38;--sh:none;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+header{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--bd)}
+.bar{max-width:1100px;margin:0 auto;padding:10px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.logo{font-weight:800;letter-spacing:-.02em;margin-right:6px}
+.tabs{display:flex;gap:4px}
+.tab{border:0;background:none;padding:8px 14px;border-radius:8px;cursor:pointer;color:var(--mut);font-weight:600}
+.tab.on{background:var(--soft);color:var(--tx)}
+.badge{background:var(--bad);color:#fff;border-radius:99px;font-size:12px;padding:1px 7px;margin-left:5px}
+.sp{flex:1}
+.chips{display:flex;gap:4px}
+.chip-b{border:1px solid var(--bd);background:none;border-radius:99px;padding:4px 11px;cursor:pointer;color:var(--mut);font-size:13px}
+.chip-b.on{background:var(--ac);border-color:var(--ac);color:var(--ac-tx)}
+main{max-width:1100px;margin:0 auto;padding:16px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:22px 0 8px;display:flex;gap:8px;align-items:center}
+h2 .n{background:var(--soft);border-radius:99px;padding:0 8px;font-size:12px}
+h2.bad{color:var(--bad)} h2.warn{color:var(--warn)}
+.btn{border:1px solid var(--bd);background:var(--card);border-radius:8px;padding:6px 11px;cursor:pointer;font-size:13.5px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.btn:hover{background:var(--soft)}
+.btn.pri{background:var(--ac);border-color:var(--ac);color:var(--ac-tx);font-weight:600}
+.btn.wa{background:#25d366;border-color:#25d366;color:#06240f;font-weight:600}
+.btn.off{opacity:.4;pointer-events:none}
+.btn.danger{color:var(--bad)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;box-shadow:var(--sh)}
+.card.click{cursor:pointer}
+.card.click:hover{border-color:var(--ac)}
+.item{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.item .info{flex:1;min-width:220px}
+.item .nm{font-weight:700;cursor:pointer}
+.item .nm:hover{text-decoration:underline}
+.sub{color:var(--mut);font-size:13px}
+.acts{display:flex;gap:6px;flex-wrap:wrap}
+.tag{display:inline-block;font-size:12px;border-radius:99px;padding:1px 9px;background:hsl(var(--h,220) 70% 50% / .15);color:hsl(var(--h,220) 55% 38%);font-weight:600}
+@media (prefers-color-scheme:dark){.tag{color:hsl(var(--h,220) 80% 75%)}}
+.late{color:var(--bad);font-weight:600}.today{color:var(--warn);font-weight:600}
+.flag{color:var(--ac);font-weight:700}
+.empty{text-align:center;color:var(--mut);padding:36px 10px}
+.ok-all{background:var(--card);border:1px dashed var(--bd);border-radius:12px;padding:22px;text-align:center;color:var(--ok);font-weight:600}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+input[type=text],input[type=search],input[type=tel],input[type=number],input[type=date],select,textarea{
+  border:1px solid var(--bd);background:var(--card);border-radius:8px;padding:7px 10px;width:100%}
+.toolbar input[type=search]{max-width:260px}.toolbar select{width:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:10px}
+.board{display:flex;gap:10px;overflow-x:auto;align-items:flex-start;padding-bottom:10px}
+.col{min-width:260px;width:260px;flex:none;background:var(--soft);border-radius:12px;padding:8px}
+.col h3{margin:4px 6px 8px;font-size:13px;display:flex;justify-content:space-between}
+.col .card{margin-bottom:8px;padding:10px}
+.prog{height:6px;border-radius:9px;background:var(--soft);overflow:hidden;margin-top:6px}
+.prog i{display:block;height:100%;background:var(--ok)}
+.overlay{position:fixed;inset:0;background:rgba(10,14,24,.5);z-index:20;display:flex;justify-content:center;align-items:flex-start;padding:24px 12px;overflow:auto}
+.modal{background:var(--bg);border-radius:14px;width:100%;max-width:720px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+.mh{display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--bd);background:var(--card);border-radius:14px 14px 0 0}
+.mh h3{margin:0;flex:1;font-size:17px}
+.mb{padding:4px 16px 18px}
+.mb h4{margin:20px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:560px){.f2{grid-template-columns:1fr}}
+label.l{display:block;font-size:12.5px;color:var(--mut);margin-bottom:3px}
+.row{display:flex;gap:6px;align-items:center}
+.tl{border-left:2px solid var(--bd);margin-left:6px;padding-left:12px}
+.tl .e{margin-bottom:10px}
+.tl .e.sys{color:var(--mut);font-size:13px}
+.tl .meta{font-size:12px;color:var(--mut)}
+.task{display:flex;gap:8px;align-items:center;padding:4px 0}
+.task.done span{text-decoration:line-through;color:var(--mut)}
+.task span{flex:1}
+.x{border:0;background:none;color:var(--mut);cursor:pointer;font-size:16px;padding:2px 6px}
+.money{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}
+.money div{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px 10px}
+.money b{display:block;font-size:17px}
+.warnbox{background:hsl(40 90% 50% / .15);border:1px solid hsl(40 90% 50% / .5);border-radius:10px;padding:8px 12px;margin-top:20px;font-size:13.5px}
+</style>
+</head>
+<body>
+<header><div class="bar" id="topbar"></div></header>
+<main id="main"></main>
+<div id="modal"></div>
+
+<script>
+'use strict';
+const ETAPAS = ['Contacto','Demo','Propuesta','Negociación','Desarrollo','Entregado','Soporte','Descartado'];
+const ACTIVAS = ['Contacto','Demo','Propuesta','Negociación','Desarrollo'];
+const HUE = {Contacto:210,Demo:260,Propuesta:300,'Negociación':30,Desarrollo:45,Entregado:140,Soporte:175,Descartado:0};
+const RUBROS = ['Kiosco','Verdulería','Dietética','Restaurante','Otro'];
+const SOCIOS = ['Conrado','Nicolas'];
+const CHECKLIST = ['Relevamiento con el cliente','Diseño / mockups','Primera versión','Prueba con el cliente','Ajustes','Capacitación','Entrega y puesta en marcha'];
+const KEY = 'crm-hb-v1';
+
+// ---------- estado ----------
+const uid = () => Math.random().toString(36).slice(2,10) + Date.now().toString(36);
+let db = load();
+const ui = { tab:'hoy', vista:'lista', filtro:'Todos', q:'', etapa:'', modal:null };
+
+function load(){
+  try{
+    const d = JSON.parse(localStorage.getItem(KEY));
+    if(d && Array.isArray(d.clientes)){ d.config = Object.assign({diasSinContacto:7, yo:'Conrado', ultimoBackup:null}, d.config); return d; }
+  }catch(e){}
+  return { clientes:[], config:{ diasSinContacto:7, yo:'Conrado', ultimoBackup:null } };
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(db)); }catch(e){ alert('No pude guardar en el navegador. Hacé un backup ya.'); } }
+const byId = id => db.clientes.find(c => c.id === id);
+function touch(c){ c.updatedAt = Date.now(); save(); render(); }
+
+// ---------- fechas / formato ----------
+const pad = n => String(n).padStart(2,'0');
+const iso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const hoy = () => iso(new Date());
+const addDias = (s,n) => { const d = new Date(s+'T00:00'); d.setDate(d.getDate()+n); return iso(d); };
+const diff = (a,b) => Math.round((new Date(a+'T00:00') - new Date(b+'T00:00')) / 864e5);
+const fmt = s => new Date(s+'T00:00').toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'numeric'});
+function rel(s){
+  const d = diff(s,hoy());
+  if(d===0) return 'hoy'; if(d===1) return 'mañana'; if(d===-1) return 'ayer';
+  if(d<0) return `hace ${-d} días`; if(d<7) return `en ${d} días`; return fmt(s);
+}
+const money = n => new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(n||0);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const tsFmt = t => { const d = new Date(t); return `${fmt(iso(d))} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+
+function waLink(n){
+  let d = (n||'').replace(/\D/g,'').replace(/^0+/,'');
+  if(!d) return '';
+  if(d.length===10) d = '549'+d;
+  else if(d.startsWith('54') && d.length===12 && d[2]!=='9') d = '549'+d.slice(2);
+  return 'https://wa.me/'+d;
+}
+const ultimo = c => c.ultimoContacto || c.creado;
+const progreso = c => { const t=c.tareas||[]; return t.length ? Math.round(100*t.filter(x=>x.hecha).length/t.length) : null; };
+const cobrado = c => (c.pagos||[]).reduce((s,p)=>s+(+p.monto||0),0);
+
+function nuevoCliente(o){
+  return Object.assign({
+    id:uid(), nombre:'', duenio:'', rubro:'Kiosco', whatsapp:'', etapa:'Contacto', responsable:db.config.yo,
+    proxima:{texto:'',fecha:''}, esperaRespuesta:false, esperaDesde:null, ultimoContacto:null,
+    creado:hoy(), notas:[], tareas:[], presupuesto:0, pagos:[], updatedAt:Date.now()
+  }, o);
+}
+function nota(c, texto, sistema){ c.notas.unshift({id:uid(), ts:Date.now(), autor:db.config.yo, texto, sistema:!!sistema}); }
+
+// ---------- agenda del día ----------
+const pasaFiltro = c => ui.filtro==='Todos' || c.responsable===ui.filtro;
+function agenda(){
+  const h = hoy(), g = {responder:[],vencidos:[],hoy:[],sinAccion:[],estancados:[],proximos:[]};
+  for(const c of db.clientes){
+    if(!pasaFiltro(c) || c.etapa==='Descartado') continue;
+    const f = c.proxima && c.proxima.fecha;
+    if(c.esperaRespuesta) g.responder.push(c);
+    else if(f){
+      if(f<h) g.vencidos.push(c);
+      else if(f===h) g.hoy.push(c);
+      else if(ACTIVAS.includes(c.etapa) && diff(h,ultimo(c)) >= db.config.diasSinContacto) g.estancados.push(c);
+      else if(f<=addDias(h,7)) g.proximos.push(c);
+    }
+    else if(ACTIVAS.includes(c.etapa)) g.sinAccion.push(c);
+  }
+  g.responder.sort((a,b)=>(a.esperaDesde||'').localeCompare(b.esperaDesde||''));
+  for(const k of ['vencidos','hoy','estancados','proximos']) g[k].sort((a,b)=>a.proxima.fecha.localeCompare(b.proxima.fecha));
+  return g;
+}
+const urgentes = g => g.responder.length + g.vencidos.length + g.hoy.length;
+
+// ---------- render ----------
+function render(){
+  const ov = document.querySelector('.overlay'), sc = ov ? ov.scrollTop : null;
+  const g = agenda();
+  const n = urgentes(g);
+  document.title = (n ? `(${n}) ` : '') + 'CRM HB';
+  document.getElementById('topbar').innerHTML = `
+    <span class="logo">CRM HB</span>
+    <div class="tabs">
+      <button class="tab ${ui.tab==='hoy'?'on':''}" data-a="tab" data-v="hoy">Hoy${n?`<span class="badge">${n}</span>`:''}</button>
+      <button class="tab ${ui.tab==='clientes'?'on':''}" data-a="tab" data-v="clientes">Clientes</button>
+    </div>
+    <span class="sp"></span>
+    <div class="chips">${['Todos',...SOCIOS].map(s=>`<button class="chip-b ${ui.filtro===s?'on':''}" data-a="filtro" data-v="${s}">${s}</button>`).join('')}</div>
+    <button class="btn pri" data-a="nuevo">+ Cliente</button>
+    <button class="btn" data-a="config" title="Configuración y backup">⚙</button>`;
+  document.getElementById('main').innerHTML = ui.tab==='hoy' ? vistaHoy(g) : vistaClientes();
+  document.getElementById('modal').innerHTML = ui.modal ? modalHTML() : '';
+  const nov = document.querySelector('.overlay');
+  if(nov && sc!=null && ui.modal && ui.modal.type==='cliente') nov.scrollTop = sc;
+}
+
+function tag(e){ return `<span class="tag" style="--h:${HUE[e]}">${esc(e)}</span>`; }
+
+function seccion(titulo, lista, cls, tipo){
+  if(!lista.length) return '';
+  return `<h2 class="${cls||''}">${titulo}<span class="n">${lista.length}</span></h2>` + lista.map(c=>itemHoy(c,tipo)).join('');
+}
+function itemHoy(c, tipo){
+  const f = c.proxima.fecha;
+  let linea = '';
+  if(tipo==='responder') linea = `<span class="flag">📩 Te escribió ${c.esperaDesde? rel(c.esperaDesde):''} — falta responderle</span>`;
+  else if(tipo==='sinAccion') linea = `<span class="sub">Sin próxima acción definida</span>`;
+  else {
+    const cls = f<hoy()?'late':f===hoy()?'today':'';
+    linea = `<b>${esc(c.proxima.texto||'Seguimiento')}</b> · <span class="${cls}">${rel(f)}</span>`;
+  }
+  const dias = diff(hoy(), ultimo(c));
+  const estanc = tipo==='estancados' ? ` · <span class="today">${dias} días sin contacto</span>` : '';
+  const wa = waLink(c.whatsapp);
+  return `<div class="card item">
+    <div class="info">
+      <div><span class="nm" data-a="abrir" data-id="${c.id}">${esc(c.nombre)}</span> ${tag(c.etapa)}</div>
+      <div>${linea}${estanc}</div>
+      <div class="sub">${esc(c.rubro)}${c.duenio?' · '+esc(c.duenio):''} · último contacto ${c.ultimoContacto?rel(c.ultimoContacto):'nunca'} · ${esc(c.responsable)}</div>
+    </div>
+    <div class="acts">
+      <a class="btn wa ${wa?'':'off'}" href="${wa||'#'}" target="_blank" rel="noopener">WhatsApp</a>
+      <button class="btn pri" data-a="hecho" data-id="${c.id}">${tipo==='responder'?'Respondí':'Hecho'}</button>
+      ${tipo==='responder'?'':`<button class="btn" data-a="posponer" data-id="${c.id}" data-n="1">Mañana</button>
+      <button class="btn" data-a="posponer" data-id="${c.id}" data-n="3">+3d</button>
+      <button class="btn" data-a="posponer" data-id="${c.id}" data-n="7">+1sem</button>`}
+    </div></div>`;
+}
+function vistaHoy(g){
+  const d = new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+  let h = `<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><h1 style="margin:0;font-size:22px;text-transform:capitalize">${d}</h1>
+    <span class="sub">${urgentes(g)? `${urgentes(g)} para atender hoy`:'nada urgente'}</span></div>`;
+  if(!db.clientes.length) return h + `<div class="empty">Todavía no cargaste ningún cliente.<br><br><button class="btn pri" data-a="nuevo">+ Cargar el primero</button></div>`;
+  h += seccion('📩 Te escribieron — falta responder', g.responder, 'bad', 'responder');
+  h += seccion('Vencidos', g.vencidos, 'bad', 'vencidos');
+  h += seccion('Para hoy', g.hoy, '', 'hoy');
+  h += seccion('Sin próxima acción', g.sinAccion, 'warn', 'sinAccion');
+  h += seccion(`Sin contacto hace ${db.config.diasSinContacto}+ días`, g.estancados, 'warn', 'estancados');
+  if(!urgentes(g) && !g.sinAccion.length && !g.estancados.length) h += `<div class="ok-all" style="margin-top:18px">✔ Estás al día. Nadie esperando respuesta y nada vencido.</div>`;
+  h += seccion('Próximos 7 días', g.proximos, '', 'proximos');
+  const bk = db.config.ultimoBackup;
+  if(db.clientes.length && (!bk || diff(hoy(), bk) >= 7))
+    h += `<div class="warnbox">💾 Los datos viven solo en este navegador. ${bk?`Último backup: ${rel(bk)}.`:'Nunca hiciste un backup.'} <button class="btn" data-a="exportar">Descargar backup</button></div>`;
+  return h;
+}
+
+// ---------- clientes ----------
+function filtrados(){
+  const q = ui.q.trim().toLowerCase();
+  return db.clientes.filter(c => pasaFiltro(c) && (!ui.etapa || c.etapa===ui.etapa) &&
+    (!q || [c.nombre,c.duenio,c.rubro,c.whatsapp].some(x => (x||'').toLowerCase().includes(q))));
+}
+function cardCliente(c){
+  const p = progreso(c), f = c.proxima.fecha, wa = waLink(c.whatsapp);
+  const cls = f && f<hoy() ? 'late' : f===hoy() ? 'today' : '';
+  const saldo = (+c.presupuesto||0) - cobrado(c);
+  return `<div class="card click" data-a="abrir" data-id="${c.id}">
+    <div class="row" style="justify-content:space-between"><b>${esc(c.nombre)}</b>${c.esperaRespuesta?'<span class="flag" title="Te escribió, falta responder">📩</span>':''}</div>
+    <div class="sub">${esc(c.rubro)}${c.duenio?' · '+esc(c.duenio):''} · ${esc(c.responsable)}</div>
+    <div style="margin:6px 0">${tag(c.etapa)}</div>
+    <div class="sub">${f?`${esc(c.proxima.texto||'Seguimiento')} · <span class="${cls}">${rel(f)}</span>`:'Sin próxima acción'}</div>
+    ${p!==null?`<div class="prog"><i style="width:${p}%"></i></div><div class="sub">${p}% de avance</div>`:''}
+    ${+c.presupuesto>0?`<div class="sub">Saldo: <b>${money(saldo)}</b> de ${money(c.presupuesto)}</div>`:''}
+    <div class="acts" style="margin-top:8px">
+      <a class="btn wa ${wa?'':'off'}" href="${wa||'#'}" target="_blank" rel="noopener" data-stop>WhatsApp</a>
+      ${c.esperaRespuesta?'':`<button class="btn" data-a="meescribio" data-id="${c.id}">📩 Me escribió</button>`}
+    </div></div>`;
+}
+function listaHTML(){
+  const l = filtrados();
+  if(!l.length) return `<div class="empty">${db.clientes.length?'Ningún cliente coincide con el filtro.':'Todavía no hay clientes.'}</div>`;
+  if(ui.vista==='lista'){
+    const orden = [...l].sort((a,b)=>ETAPAS.indexOf(a.etapa)-ETAPAS.indexOf(b.etapa) || a.nombre.localeCompare(b.nombre));
+    return `<div class="grid">${orden.map(cardCliente).join('')}</div>`;
+  }
+  return `<div class="board">${ETAPAS.map(e=>{
+    const cs = l.filter(c=>c.etapa===e);
+    return `<div class="col"><h3>${tag(e)}<span class="sub">${cs.length}</span></h3>${cs.map(cardCliente).join('')}</div>`;
+  }).join('')}</div>`;
+}
+function vistaClientes(){
+  return `<div class="toolbar">
+    <input type="search" id="q" placeholder="Buscar por comercio, dueño, rubro o teléfono…" value="${esc(ui.q)}">
+    <select id="fetapa"><option value="">Todas las etapas</option>${ETAPAS.map(e=>`<option ${ui.etapa===e?'selected':''}>${e}</option>`).join('')}</select>
+    <span class="sp"></span>
+    <div class="chips"><button class="chip-b ${ui.vista==='lista'?'on':''}" data-a="vista" data-v="lista">Lista</button>
+    <button class="chip-b ${ui.vista==='embudo'?'on':''}" data-a="vista" data-v="embudo">Embudo</button></div>
+  </div><div id="lista">${listaHTML()}</div>`;
+}
+
+// ---------- modales ----------
+const opts = (arr, sel) => arr.map(x=>`<option ${x===sel?'selected':''}>${esc(x)}</option>`).join('');
+function modalShell(titulo, cuerpo){
+  return `<div class="overlay" data-a="bg"><div class="modal"><div class="mh"><h3>${titulo}</h3><button class="btn" data-a="cerrar">Cerrar</button></div><div class="mb">${cuerpo}</div></div></div>`;
+}
+function modalHTML(){
+  const m = ui.modal, c = m.id ? byId(m.id) : null;
+  if(m.type==='nuevo') return modalShell('Nuevo cliente', `
+    <form data-submit="crear">
+      <div class="f2" style="margin-top:14px">
+        <div><label class="l">Comercio *</label><input type="text" name="nombre" required autofocus></div>
+        <div><label class="l">Dueño / contacto</label><input type="text" name="duenio"></div>
+        <div><label class="l">Rubro</label><select name="rubro">${opts(RUBROS)}</select></div>
+        <div><label class="l">WhatsApp (con código de área, sin 15)</label><input type="tel" name="whatsapp" placeholder="11 2345 6789"></div>
+        <div><label class="l">Etapa</label><select name="etapa">${opts(ETAPAS)}</select></div>
+        <div><label class="l">Responsable</label><select name="responsable">${opts(SOCIOS, db.config.yo)}</select></div>
+        <div><label class="l">Próxima acción</label><input type="text" name="ptexto" value="Escribirle"></div>
+        <div><label class="l">Cuándo</label><input type="date" name="pfecha" value="${hoy()}"></div>
+      </div>
+      <div class="row" style="margin-top:16px"><button class="btn pri">Crear cliente</button></div>
+    </form>`);
+  if(m.type==='hecho' && c) return modalShell(c.esperaRespuesta?`Respondiste a ${esc(c.nombre)}`:`Seguimiento: ${esc(c.nombre)}`, `
+    <form data-submit="hecho" data-id="${c.id}">
+      <h4>¿Qué hablaron? (opcional)</h4>
+      <textarea name="nota" rows="3" autofocus placeholder="Ej: Le mandé la propuesta, quedó en verla con su socio"></textarea>
+      <h4>Próxima acción</h4>
+      <div class="f2">
+        <div><label class="l">Qué sigue</label><input type="text" name="ptexto" value="${esc(c.proxima.texto||'')}" placeholder="Ej: Preguntarle si vio la propuesta"></div>
+        <div><label class="l">Cuándo</label><input type="date" name="pfecha" value="${addDias(hoy(),3)}"></div>
+      </div>
+      <div class="row" style="margin-top:8px;flex-wrap:wrap">${[1,3,7,14].map(n=>`<button type="button" class="btn" data-a="fechaRapida" data-n="${n}">${n===1?'Mañana':n===14?'2 sem':n===7?'1 sem':'+'+n+'d'}</button>`).join('')}</div>
+      <div class="row" style="margin-top:16px"><button class="btn pri">Guardar</button></div>
+    </form>`);
+  if(m.type==='config') return modalShell('Configuración', `
+    <h4>Quién sos</h4>
+    <select data-cfg="yo">${opts(SOCIOS, db.config.yo)}</select>
+    <div class="sub">Se usa como autor de las notas y como responsable por defecto.</div>
+    <h4>Alerta por días sin contacto</h4>
+    <input type="number" min="1" max="90" data-cfg="diasSinContacto" value="${db.config.diasSinContacto}" style="max-width:120px">
+    <div class="sub">Un cliente en etapa activa sin contacto por esta cantidad de días aparece en Hoy.</div>
+    <h4>Backup y compartir entre ustedes</h4>
+    <div class="row" style="flex-wrap:wrap">
+      <button class="btn pri" data-a="exportar">Descargar backup (.json)</button>
+      <label class="btn">Importar / combinar…<input type="file" accept=".json,application/json" data-a="importar" hidden></label>
+    </div>
+    <div class="sub" style="margin-top:6px">Los datos se guardan solo en este navegador. Al importar se combinan por cliente: gana el que se modificó más reciente. Los clientes borrados no se propagan.</div>`);
+  if(m.type==='cliente' && c) return modalShell(esc(c.nombre), fichaHTML(c));
+  return '';
+}
+function fichaHTML(c){
+  const p = progreso(c), pag = cobrado(c), pres = +c.presupuesto||0;
+  const wa = waLink(c.whatsapp);
+  return `
+  <div class="row" style="margin:14px 0 4px;flex-wrap:wrap">
+    <a class="btn wa ${wa?'':'off'}" href="${wa||'#'}" target="_blank" rel="noopener">WhatsApp</a>
+    <button class="btn pri" data-a="hecho" data-id="${c.id}">Registrar seguimiento</button>
+    <span class="sp"></span>
+    <button class="btn danger" data-a="borrar" data-id="${c.id}">Borrar</button>
+  </div>
+  <h4>Datos</h4>
+  <div class="f2">
+    <div><label class="l">Comercio</label><input type="text" data-f="nombre" value="${esc(c.nombre)}"></div>
+    <div><label class="l">Dueño / contacto</label><input type="text" data-f="duenio" value="${esc(c.duenio)}"></div>
+    <div><label class="l">Rubro</label><select data-f="rubro">${opts(RUBROS, c.rubro)}</select></div>
+    <div><label class="l">WhatsApp</label><input type="tel" data-f="whatsapp" value="${esc(c.whatsapp)}"></div>
+    <div><label class="l">Etapa</label><select data-f="etapa">${opts(ETAPAS, c.etapa)}</select></div>
+    <div><label class="l">Responsable</label><select data-f="responsable">${opts(SOCIOS, c.responsable)}</select></div>
+  </div>
+  <h4>Próxima acción</h4>
+  <div class="f2">
+    <div><label class="l">Qué</label><input type="text" data-f="ptexto" value="${esc(c.proxima.texto)}"></div>
+    <div><label class="l">Cuándo</label><input type="date" data-f="pfecha" value="${esc(c.proxima.fecha)}"></div>
+  </div>
+  <label class="row" style="margin-top:10px"><input type="checkbox" data-f="espera" ${c.esperaRespuesta?'checked':''}> 📩 Me escribió y falta responderle</label>
+
+  <h4>Avance del proyecto ${p!==null?`· ${p}%`:''}</h4>
+  ${p!==null?`<div class="prog" style="margin:0 0 8px"><i style="width:${p}%"></i></div>`:''}
+  ${(c.tareas||[]).map(t=>`<div class="task ${t.hecha?'done':''}"><input type="checkbox" data-a="tarea" data-id="${c.id}" data-t="${t.id}" ${t.hecha?'checked':''}><span>${esc(t.texto)}</span><button class="x" data-a="borrarTarea" data-id="${c.id}" data-t="${t.id}" title="Quitar">×</button></div>`).join('')}
+  <form data-submit="tarea" data-id="${c.id}" class="row" style="margin-top:6px"><input type="text" name="texto" placeholder="Nueva tarea o hito…" required><button class="btn">Agregar</button></form>
+  ${(c.tareas||[]).length?'':`<div style="margin-top:6px"><button class="btn" data-a="checklist" data-id="${c.id}">Usar checklist típico de proyecto</button></div>`}
+
+  <h4>Plata</h4>
+  <div class="money">
+    <div><span class="sub">Presupuesto</span><b>${money(pres)}</b></div>
+    <div><span class="sub">Cobrado</span><b style="color:var(--ok)">${money(pag)}</b></div>
+    <div><span class="sub">Saldo</span><b style="color:${pres-pag>0?'var(--warn)':'var(--ok)'}">${money(pres-pag)}</b></div>
+  </div>
+  <div style="max-width:220px"><label class="l">Presupuesto acordado ($)</label><input type="number" min="0" step="1" data-f="presupuesto" value="${pres||''}"></div>
+  ${(c.pagos||[]).map(x=>`<div class="task"><span>${fmt(x.fecha)} · <b>${money(x.monto)}</b>${x.nota?' · '+esc(x.nota):''}</span><button class="x" data-a="borrarPago" data-id="${c.id}" data-t="${x.id}" title="Quitar">×</button></div>`).join('')}
+  <form data-submit="pago" data-id="${c.id}" class="row" style="margin-top:6px;flex-wrap:wrap">
+    <input type="number" name="monto" min="1" placeholder="Monto cobrado" required style="width:150px">
+    <input type="date" name="fecha" value="${hoy()}" style="width:160px">
+    <input type="text" name="nota" placeholder="Anticipo, cuota 2…" style="flex:1;min-width:120px">
+    <button class="btn">Registrar cobro</button>
+  </form>
+
+  <h4>Línea de tiempo</h4>
+  <form data-submit="nota" data-id="${c.id}"><textarea name="texto" rows="2" placeholder="Anotá lo que hablaron o pasó…" required></textarea>
+    <div style="margin-top:6px"><button class="btn">Agregar nota</button></div></form>
+  <div class="tl" style="margin-top:14px">${(c.notas||[]).map(n=>`<div class="e ${n.sistema?'sys':''}"><div class="meta">${tsFmt(n.ts)} · ${esc(n.autor)}</div><div>${esc(n.texto).replace(/\n/g,'<br>')}</div></div>`).join('') || '<div class="sub">Sin notas todavía.</div>'}</div>`;
+}
+
+// ---------- acciones ----------
+function setField(c, f, t){
+  const v = t.type==='checkbox' ? t.checked : t.value;
+  if(f==='ptexto') c.proxima.texto = v;
+  else if(f==='pfecha') c.proxima.fecha = v;
+  else if(f==='espera'){ c.esperaRespuesta = v; c.esperaDesde = v ? hoy() : null; }
+  else if(f==='presupuesto') c.presupuesto = Math.max(0, +v||0);
+  else if(f==='etapa'){ if(v!==c.etapa){ nota(c, `Etapa: ${c.etapa} → ${v}`, true); c.etapa = v; } }
+  else if(f==='nombre'){ if(v.trim()) c.nombre = v.trim(); }
+  else c[f] = v;
+}
+const A = {
+  tab(t){ ui.tab = t.dataset.v; render(); },
+  filtro(t){ ui.filtro = t.dataset.v; render(); },
+  vista(t){ ui.vista = t.dataset.v; render(); },
+  nuevo(){ ui.modal = {type:'nuevo'}; render(); },
+  config(){ ui.modal = {type:'config'}; render(); },
+  abrir(t){ ui.modal = {type:'cliente', id:t.dataset.id}; render(); },
+  hecho(t){ ui.modal = {type:'hecho', id:t.dataset.id, volver:ui.modal && ui.modal.type==='cliente'}; render(); },
+  cerrar(){ ui.modal = null; render(); },
+  bg(t, e){ if(e.target===t) A.cerrar(); },
+  posponer(t){ const c=byId(t.dataset.id); c.proxima.fecha = addDias(hoy(), +t.dataset.n); touch(c); },
+  meescribio(t){ const c=byId(t.dataset.id); c.esperaRespuesta=true; c.esperaDesde=hoy(); touch(c); },
+  fechaRapida(t){ document.querySelector('[name=pfecha]').value = addDias(hoy(), +t.dataset.n); },
+  tarea(t){ const c=byId(t.dataset.id), x=c.tareas.find(y=>y.id===t.dataset.t); x.hecha=t.checked;
+    if(x.hecha) nota(c, `Hito completado: ${x.texto}`, true); touch(c); },
+  borrarTarea(t){ const c=byId(t.dataset.id); c.tareas=c.tareas.filter(y=>y.id!==t.dataset.t); touch(c); },
+  borrarPago(t){ const c=byId(t.dataset.id); c.pagos=c.pagos.filter(y=>y.id!==t.dataset.t); touch(c); },
+  checklist(t){ const c=byId(t.dataset.id); c.tareas = CHECKLIST.map(x=>({id:uid(),texto:x,hecha:false})); touch(c); },
+  borrar(t){ const c=byId(t.dataset.id); if(!confirm(`¿Borrar a "${c.nombre}" y todo su historial? No se puede deshacer.`)) return;
+    db.clientes = db.clientes.filter(x=>x.id!==c.id); ui.modal=null; save(); render(); },
+  exportar(){
+    db.config.ultimoBackup = hoy(); save();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));
+    a.download = `crm-hb-${hoy()}.json`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 2000); render();
+  },
+  importar(t){
+    const file = t.files[0]; if(!file) return;
+    const r = new FileReader();
+    r.onload = () => {
+      try{
+        const d = JSON.parse(r.result);
+        if(!d || !Array.isArray(d.clientes)) throw 0;
+        let nuevos=0, act=0;
+        for(const c of d.clientes){
+          const i = db.clientes.findIndex(x=>x.id===c.id);
+          if(i<0){ db.clientes.push(c); nuevos++; }
+          else if((c.updatedAt||0) > (db.clientes[i].updatedAt||0)){ db.clientes[i]=c; act++; }
+        }
+        save(); render(); alert(`Listo: ${nuevos} clientes nuevos, ${act} actualizados.`);
+      }catch(e){ alert('Ese archivo no parece un backup del CRM.'); }
+    };
+    r.readAsText(file); t.value='';
+  }
+};
+const S = {
+  crear(f){
+    const d = Object.fromEntries(new FormData(f));
+    const c = nuevoCliente({nombre:d.nombre.trim(), duenio:d.duenio.trim(), rubro:d.rubro, whatsapp:d.whatsapp.trim(),
+      etapa:d.etapa, responsable:d.responsable, proxima:{texto:d.ptexto.trim(), fecha:d.pfecha}});
+    nota(c, 'Cliente cargado', true);
+    db.clientes.push(c); ui.modal = null; save(); render();
+  },
+  hecho(f){
+    const c = byId(f.dataset.id), d = Object.fromEntries(new FormData(f));
+    nota(c, d.nota.trim() || (c.esperaRespuesta ? 'Respondí el mensaje' : 'Seguimiento realizado'), !d.nota.trim());
+    c.ultimoContacto = hoy(); c.esperaRespuesta = false; c.esperaDesde = null;
+    c.proxima = {texto:d.ptexto.trim(), fecha:d.pfecha};
+    const volver = ui.modal.volver; ui.modal = volver ? {type:'cliente', id:c.id} : null; touch(c);
+  },
+  tarea(f){ const c=byId(f.dataset.id); c.tareas.push({id:uid(), texto:f.texto.value.trim(), hecha:false}); touch(c); },
+  pago(f){ const c=byId(f.dataset.id); c.pagos.push({id:uid(), monto:+f.monto.value, fecha:f.fecha.value||hoy(), nota:f.nota.value.trim()});
+    nota(c, `Cobro registrado: ${money(+f.monto.value)}${f.nota.value.trim()?' ('+f.nota.value.trim()+')':''}`, true); touch(c); },
+  nota(f){ const c=byId(f.dataset.id); nota(c, f.texto.value.trim()); c.ultimoContacto = hoy(); touch(c); }
+};
+
+document.addEventListener('click', e => {
+  if(e.target.closest('[data-stop]')) { e.stopPropagation(); return; }
+  const t = e.target.closest('[data-a]');
+  if(!t || t.type==='file' || t.dataset.a==='tarea') return;
+  const fn = A[t.dataset.a]; if(fn) fn(t, e);
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if(t.dataset.a==='tarea' || t.dataset.a==='importar'){ A[t.dataset.a](t, e); return; }
+  if(t.id==='fetapa'){ ui.etapa = t.value; render(); return; }
+  if(t.dataset.cfg){
+    db.config[t.dataset.cfg] = t.dataset.cfg==='diasSinContacto' ? Math.max(1, +t.value||7) : t.value;
+    save(); render(); return;
+  }
+  if(t.dataset.f && ui.modal && ui.modal.id){
+    const c = byId(ui.modal.id); setField(c, t.dataset.f, t); touch(c);
+  }
+});
+document.addEventListener('input', e => {
+  if(e.target.id==='q'){ ui.q = e.target.value; document.getElementById('lista').innerHTML = listaHTML(); }
+});
+document.addEventListener('submit', e => {
+  const f = e.target.closest('[data-submit]'); if(!f) return;
+  e.preventDefault(); S[f.dataset.submit](f);
+});
+document.addEventListener('keydown', e => { if(e.key==='Escape' && ui.modal) A.cerrar(); });
+// al volver a la pestaña, refrescar (cambia el día, otros tabs, etc.)
+document.addEventListener('visibilitychange', () => { if(!document.hidden && !ui.modal){ db = load(); render(); } });
+window.addEventListener('storage', e => { if(e.key===KEY && !ui.modal){ db = load(); render(); } });
+
+render();
+</script>
+</body>
+</html>
